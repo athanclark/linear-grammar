@@ -114,14 +114,31 @@ infixl 7 .<=.
 
 infixl 7 .=>.
 
-standardForm :: Ineq -> Ineq
-standardForm a@(Equ (LinExpr xs xc) (LinExpr ys yc))
-  | null xs = a
-  | null ys = a
+-- * Standard Form
+
+data IneqStdForm =
+    EquStd [LinVar] Double
+  | LteStd [LinVar] Double
+  deriving (Show, Eq)
+
+-- TODO: Test idempotency
+standardize :: Ineq -> Ineq
+standardize (Equ (LinExpr xs xc) (LinExpr ys yc))
+  | null xs = Equ (LinExpr [] (xc - yc)) (LinExpr ys 0)
+  | null ys = Equ (LinExpr xs 0) (LinExpr [] (yc - xc))
   | otherwise = let ys' = map (\y -> y {varCoeff = varCoeff y * (-1)}) ys in
-      Equ (removeDupLin $ LinExpr (ys' ++ xs) xc) (LinExpr [] yc)
-standardForm a@(Lte (LinExpr xs xc) (LinExpr ys yc))
-  | null xs = a
-  | null ys = a
+      Equ (removeDupLin $ LinExpr (ys' ++ xs) 0) (LinExpr [] (yc - xc))
+standardize (Lte (LinExpr xs xc) (LinExpr ys yc))
+  | null xs = Lte (LinExpr [] (xc - yc)) (LinExpr ys 0)
+  | null ys = Lte (LinExpr xs 0) (LinExpr [] (yc - xc))
   | otherwise = let ys' = map (\y -> y {varCoeff = varCoeff y * (-1)}) ys in
-      Lte (removeDupLin $ LinExpr (ys' ++ xs) xc) (LinExpr [] yc)
+      Lte (removeDupLin $ LinExpr (ys' ++ xs) 0) (LinExpr [] (yc - xc))
+
+standardForm :: Ineq -> IneqStdForm
+standardForm = go . standardize
+  where
+    go (Equ (LinExpr xs xc) (LinExpr ys yc)) | null xs && yc == 0 = EquStd ys xc
+                                             | null ys && xc == 0 = EquStd xs yc
+    go (Lte (LinExpr xs xc) (LinExpr ys yc)) | null xs && yc == 0 = LteStd ys xc
+                                             | null ys && xc == 0 = LteStd xs yc
+    go _ = error "Non-standard Ineq"
