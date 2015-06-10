@@ -123,6 +123,7 @@ infixl 7 .=>.
 data IneqStdForm =
     EquStd [LinVar] Double
   | LteStd [LinVar] Double
+  | GteStd [LinVar] Double
   deriving (Show, Eq)
 
 -- TODO: Test idempotency
@@ -144,5 +145,5 @@ standardForm = go . standardize
     go (Equ (LinExpr xs xc) (LinExpr ys yc)) | null xs && yc == 0 = EquStd ys xc
                                              | null ys && xc == 0 = EquStd xs yc
     go (Lte (LinExpr xs xc) (LinExpr ys yc)) | null xs && yc == 0 = LteStd ys xc
-                                             | null ys && xc == 0 = LteStd xs yc
+                                             | null ys && xc == 0 = GteStd xs yc
     go _ = error "Non-standard Ineq"
