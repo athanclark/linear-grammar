@@ -57,6 +57,10 @@ data LinVar = LinVar
   , varCoeff :: Double
   } deriving (Show, Eq)
 
+-- | For sorting tableaus
+instance Ord LinVar where
+  compare (LinVar x _) (LinVar y _) = compare x y
+
 hasName :: LinVar -> LinVar -> Bool
 hasName (LinVar n _) (LinVar m _) = n == m
 
