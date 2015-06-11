@@ -135,18 +135,25 @@ data IneqStdForm =
   | GteStd [LinVar] Double
   deriving (Show, Eq)
 
--- TODO: Test idempotency
-standardize :: Ineq -> Ineq
-standardize (Equ (LinExpr xs xc) (LinExpr ys yc))
-  | null xs = Equ (LinExpr [] (xc - yc)) (LinExpr ys 0)
-  | null ys = Equ (LinExpr xs 0) (LinExpr [] (yc - xc))
-  | otherwise = let ys' = map (\y -> y {varCoeff = varCoeff y * (-1)}) ys in
-      Equ (removeDupLin $ LinExpr (ys' ++ xs) 0) (LinExpr [] (yc - xc))
-standardize (Lte (LinExpr xs xc) (LinExpr ys yc))
-  | null xs = Lte (LinExpr [] (xc - yc)) (LinExpr ys 0)
-  | null ys = Lte (LinExpr xs 0) (LinExpr [] (yc - xc))
-  | otherwise = let ys' = map (\y -> y {varCoeff = varCoeff y * (-1)}) ys in
-      Lte (removeDupLin $ LinExpr (ys' ++ xs) 0) (LinExpr [] (yc - xc))
+getStdVars :: IneqStdForm -> [LinVar]
+getStdVars (EquStd xs _) = xs
+getStdVars (LteStd xs _) = xs
+getStdVars (GteStd xs _) = xs
+
+mapStdVars :: ([LinVar] -> [LinVar]) -> IneqStdForm -> IneqStdForm
+mapStdVars f (EquStd xs xc) = EquStd (f xs) xc
+mapStdVars f (LteStd xs xc) = LteStd (f xs) xc
+mapStdVars f (GteStd xs xc) = GteStd (f xs) xc
+
+getStdCoeff :: IneqStdForm -> Double
+getStdCoeff (EquStd _ x) = x
+getStdCoeff (LteStd _ x) = x
+getStdCoeff (GteStd _ x) = x
+
+mapStdCoeff :: (Double -> Double) -> IneqStdForm -> IneqStdForm
+mapStdCoeff f (EquStd xs xc) = EquStd xs (f xc)
+mapStdCoeff f (LteStd xs xc) = LteStd xs (f xc)
+mapStdCoeff f (GteStd xs xc) = GteStd xs (f xc)
 
 standardForm :: Ineq -> IneqStdForm
 standardForm = go . standardize
@@ -156,3 +163,22 @@ standardForm = go . standardize
     go (Lte (LinExpr xs xc) (LinExpr ys yc)) | null xs && yc == 0 = LteStd ys xc
                                              | null ys && xc == 0 = GteStd xs yc
     go _ = error "Non-standard Ineq"
+
+    -- TODO: Test idempotency
+    standardize :: Ineq -> Ineq
+    standardize (Equ (LinExpr xs xc) (LinExpr ys yc))
+      | null xs   = Equ (LinExpr [] (xc - yc)) (LinExpr ys 0)
+      | null ys   = Equ (LinExpr xs 0) (LinExpr [] (yc - xc))
+      | otherwise =
+          let
+            ys' = map (mapCoeff $ (*) (-1)) ys
+          in
+          Equ (removeDupLin $ LinExpr (ys' ++ xs) 0) (LinExpr [] (yc - xc))
+    standardize (Lte (LinExpr xs xc) (LinExpr ys yc))
+      | null xs   = Lte (LinExpr [] (xc - yc)) (LinExpr ys 0)
+      | null ys   = Lte (LinExpr xs 0) (LinExpr [] (yc - xc))
+      | otherwise =
+          let
+            ys' = map (mapCoeff $ (*) (-1)) ys
+          in
+          Lte (removeDupLin $ LinExpr (ys' ++ xs) 0) (LinExpr [] (yc - xc))
