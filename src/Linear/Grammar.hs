@@ -130,6 +130,12 @@ data Ineq =
   | Lte LinExpr LinExpr
   deriving (Show, Eq)
 
+instance Arbitrary Ineq where
+  arbitrary = oneof
+    [ liftM2 Equ arbitrary arbitrary
+    , liftM2 Lte arbitrary arbitrary
+    ]
+
 (.==.) :: LinAst -> LinAst -> Ineq
 x .==. y = Equ (makeLinExpr x) (makeLinExpr y)
 
@@ -153,6 +159,13 @@ data IneqStdForm =
   | GteStd [LinVar] Double
   deriving (Show, Eq)
 
+instance Arbitrary IneqStdForm where
+  arbitrary = oneof
+    [ liftM2 EquStd arbitrary $ choose (-1000,1000)
+    , liftM2 LteStd arbitrary $ choose (-1000,1000)
+    , liftM2 GteStd arbitrary $ choose (-1000,1000)
+    ]
+
 getStdVars :: IneqStdForm -> [LinVar]
 getStdVars (EquStd xs _) = xs
 getStdVars (LteStd xs _) = xs
@@ -173,6 +186,7 @@ mapStdConst f (EquStd xs xc) = EquStd xs (f xc)
 mapStdConst f (LteStd xs xc) = LteStd xs (f xc)
 mapStdConst f (GteStd xs xc) = GteStd xs (f xc)
 
+-- | Turns a user-level AST to a structurally standard from inequality.
 standardForm :: Ineq -> IneqStdForm
 standardForm = go . standardize
   where
@@ -182,21 +196,21 @@ standardForm = go . standardize
                                              | null ys && xc == 0 = GteStd xs yc
     go _ = error "Non-standard Ineq"
 
-    -- TODO: Test idempotency
-    standardize :: Ineq -> Ineq
-    standardize (Equ (LinExpr xs xc) (LinExpr ys yc))
-      | null xs   = Equ (LinExpr [] (xc - yc)) (LinExpr ys 0)
-      | null ys   = Equ (LinExpr xs 0) (LinExpr [] (yc - xc))
-      | otherwise =
-          let
-            ys' = map (mapCoeff $ (*) (-1)) ys
-          in
-          Equ (removeDupLin $ LinExpr (ys' ++ xs) 0) (LinExpr [] (yc - xc))
-    standardize (Lte (LinExpr xs xc) (LinExpr ys yc))
-      | null xs   = Lte (LinExpr [] (xc - yc)) (LinExpr ys 0)
-      | null ys   = Lte (LinExpr xs 0) (LinExpr [] (yc - xc))
-      | otherwise =
-          let
-            ys' = map (mapCoeff $ (*) (-1)) ys
-          in
-          Lte (removeDupLin $ LinExpr (ys' ++ xs) 0) (LinExpr [] (yc - xc))
+-- | Standardizes user-level inequalities - to be used before @standardForm@.
+standardize :: Ineq -> Ineq
+standardize (Equ (LinExpr xs xc) (LinExpr ys yc))
+  | null xs   = Equ (LinExpr [] (xc - yc)) (LinExpr ys 0)
+  | null ys   = Equ (LinExpr xs 0) (LinExpr [] (yc - xc))
+  | otherwise =
+      let
+        ys' = map (mapCoeff $ (*) (-1)) ys
+      in
+      Equ (removeDupLin $ LinExpr (ys' ++ xs) 0) (LinExpr [] (yc - xc))
+standardize (Lte (LinExpr xs xc) (LinExpr ys yc))
+  | null xs   = Lte (LinExpr [] (xc - yc)) (LinExpr ys 0)
+  | null ys   = Lte (LinExpr xs 0) (LinExpr [] (yc - xc))
+  | otherwise =
+      let
+        ys' = map (mapCoeff $ (*) (-1)) ys
+      in
+      Lte (removeDupLin $ LinExpr (ys' ++ xs) 0) (LinExpr [] (yc - xc))
