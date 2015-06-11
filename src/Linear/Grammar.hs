@@ -61,8 +61,11 @@ data LinVar = LinVar
 instance Ord LinVar where
   compare (LinVar x _) (LinVar y _) = compare x y
 
-hasName :: LinVar -> LinVar -> Bool
-hasName (LinVar n _) (LinVar m _) = n == m
+hasName :: String -> LinVar -> Bool
+hasName n (LinVar m _) = n == m
+
+hasCoeff :: Double -> LinVar -> Bool
+hasCoeff x (LinVar _ y) = x == y
 
 -- | Linear expressions suited for normal and standard form.
 data LinExpr = LinExpr
@@ -89,8 +92,8 @@ removeDupLin (LinExpr vs c) = LinExpr (foldr go [] vs) c
   where
     go :: LinVar -> [LinVar] -> [LinVar]
     go x [] = [x]
-    go (LinVar n x) xs = case find (hasName $ LinVar n x) xs of
-      Just (LinVar m y) -> LinVar m (y + x):filter (not . hasName (LinVar n x)) xs
+    go (LinVar n x) xs = case find (hasName n) xs of
+      Just (LinVar m y) -> LinVar m (y + x):filter (not . hasName n) xs
       Nothing           -> xs
 
 makeLinExpr :: LinAst -> LinExpr
