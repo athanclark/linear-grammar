@@ -11,9 +11,9 @@ main = hspec spec
 
 spec :: Spec
 spec = do
-  describe "someFunction" $ do
-    it "should work fine" $ do
-      property someFunction
+  describe "LinAst" $ do
+    it "`multLin` should be idempotent" $ do
+      property prop_multReduction_Idempotency
 
-someFunction :: Bool -> Bool -> Property
-someFunction x y = x === y
+prop_multReduction_Idempotency :: LinAst -> Bool
+prop_multReduction_Idempotency x = multLin x == multLin (multLin x)

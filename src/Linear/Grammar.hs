@@ -6,6 +6,10 @@ module Linear.Grammar where
 
 import Data.List (find)
 import Data.String
+import Control.Monad
+
+import Test.QuickCheck
+
 
 -- * User-facing API
 
@@ -16,6 +20,14 @@ data LinAst =
   | ECoeff LinAst Double
   | EAdd LinAst LinAst
   deriving (Show, Eq)
+
+instance Arbitrary LinAst where
+  arbitrary = oneof
+    [ EVar <$> (:[]) <$> choose ('A','z')
+    , ELit <$> choose (0,1000)
+    , liftM2 ECoeff arbitrary $ choose (0,1000)
+    , liftM2 EAdd arbitrary arbitrary
+    ]
 
 -- | Doesn't solve the ridde, but it helps.
 instance IsString LinAst where

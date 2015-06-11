@@ -16,6 +16,7 @@ Library
   GHC-Options:          -Wall
   Exposed-Modules:      Linear.Grammar
   Build-Depends:        base >= 4.6 && < 5
+                      , QuickCheck
 
 Test-Suite spec
   Type:                 exitcode-stdio-1.0
