@@ -24,8 +24,8 @@ data LinAst =
 instance Arbitrary LinAst where
   arbitrary = oneof
     [ EVar <$> (:[]) <$> choose ('A','z')
-    , ELit <$> choose (0,1000)
-    , liftM2 ECoeff arbitrary $ choose (0,1000)
+    , ELit <$> choose (-1000,1000)
+    , liftM2 ECoeff arbitrary $ choose (-1000,1000)
     , liftM2 EAdd arbitrary arbitrary
     ]
 
@@ -69,6 +69,9 @@ data LinVar = LinVar
   , varCoeff :: Double
   } deriving (Show, Eq)
 
+instance Arbitrary LinVar where
+  arbitrary = liftM2 LinVar ((:[]) <$> choose ('A','z')) (choose (-1000,1000))
+
 -- | For sorting tableaus
 instance Ord LinVar where
   compare (LinVar x _) (LinVar y _) = compare x y
@@ -87,9 +90,12 @@ mapCoeff f (LinVar n x) = LinVar n $ f x
 
 -- | Linear expressions suited for normal and standard form.
 data LinExpr = LinExpr
-  { exprCoeffs :: [LinVar]
+  { exprVars :: [LinVar]
   , exprConst  :: Double
   } deriving (Show, Eq)
+
+instance Arbitrary LinExpr where
+  arbitrary = liftM2 LinExpr arbitrary $ choose (-1000,1000)
 
 mergeLinExpr :: LinExpr -> LinExpr -> LinExpr
 mergeLinExpr (LinExpr vs1 x) (LinExpr vs2 y) = LinExpr (vs1 ++ vs2) (x + y)
@@ -110,9 +116,9 @@ removeDupLin (LinExpr vs c) = LinExpr (foldr go [] vs) c
   where
     go :: LinVar -> [LinVar] -> [LinVar]
     go x [] = [x]
-    go (LinVar n x) xs = case find (hasName n) xs of
-      Just (LinVar m y) -> LinVar m (y + x):filter (not . hasName n) xs
-      Nothing           -> xs
+    go (LinVar n x) acc = case find (hasName n) acc of
+      Just (LinVar m y) -> LinVar m (y + x):filter (not . hasName n) acc
+      Nothing           -> LinVar n x:acc
 
 makeLinExpr :: LinAst -> LinExpr
 makeLinExpr = removeDupLin . addLin . multLin
