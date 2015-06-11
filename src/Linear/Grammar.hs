@@ -64,8 +64,14 @@ instance Ord LinVar where
 hasName :: String -> LinVar -> Bool
 hasName n (LinVar m _) = n == m
 
+mapName :: (String -> String) -> LinVar -> LinVar
+mapName f (LinVar n x) = LinVar (f n) x
+
 hasCoeff :: Double -> LinVar -> Bool
 hasCoeff x (LinVar _ y) = x == y
+
+mapCoeff :: (Double -> Double) -> LinVar -> LinVar
+mapCoeff f (LinVar n x) = LinVar n $ f x
 
 -- | Linear expressions suited for normal and standard form.
 data LinExpr = LinExpr
