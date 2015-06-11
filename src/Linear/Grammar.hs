@@ -145,15 +145,15 @@ mapStdVars f (EquStd xs xc) = EquStd (f xs) xc
 mapStdVars f (LteStd xs xc) = LteStd (f xs) xc
 mapStdVars f (GteStd xs xc) = GteStd (f xs) xc
 
-getStdCoeff :: IneqStdForm -> Double
-getStdCoeff (EquStd _ x) = x
-getStdCoeff (LteStd _ x) = x
-getStdCoeff (GteStd _ x) = x
+getStdConst :: IneqStdForm -> Double
+getStdConst (EquStd _ x) = x
+getStdConst (LteStd _ x) = x
+getStdConst (GteStd _ x) = x
 
-mapStdCoeff :: (Double -> Double) -> IneqStdForm -> IneqStdForm
-mapStdCoeff f (EquStd xs xc) = EquStd xs (f xc)
-mapStdCoeff f (LteStd xs xc) = LteStd xs (f xc)
-mapStdCoeff f (GteStd xs xc) = GteStd xs (f xc)
+mapStdConst :: (Double -> Double) -> IneqStdForm -> IneqStdForm
+mapStdConst f (EquStd xs xc) = EquStd xs (f xc)
+mapStdConst f (LteStd xs xc) = LteStd xs (f xc)
+mapStdConst f (GteStd xs xc) = GteStd xs (f xc)
 
 standardForm :: Ineq -> IneqStdForm
 standardForm = go . standardize
