@@ -4,7 +4,6 @@ import Linear.Grammar
 
 import Test.Hspec
 import Test.QuickCheck
-import Test.QuickCheck.Instances
 
 main :: IO ()
 main = hspec spec

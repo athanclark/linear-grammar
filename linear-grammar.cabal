@@ -1,5 +1,5 @@
 Name:                   linear-grammar
-Version:                0.0.0.7
+Version:                0.0.1
 Author:                 Athan Clark <athan.clark@gmail.com>
 Maintainer:             Athan Clark <athan.clark@gmail.com>
 License:                BSD3
@@ -28,7 +28,6 @@ Test-Suite spec
   Build-Depends:        base
                       , hspec
                       , QuickCheck
-                      , quickcheck-instances
 
 Source-Repository head
   Type:                 git
