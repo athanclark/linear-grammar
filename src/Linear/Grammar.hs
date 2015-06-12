@@ -71,12 +71,10 @@ data LinVar = LinVar
   } deriving (Show, Eq)
 
 instance Arbitrary LinVar where
-  arbitrary = liftM2 LinVar (arbitrary `suchThat` (\x -> isSmall x
+  arbitrary = liftM2 LinVar (arbitrary `suchThat` (\x -> length x < 5
                                                       && not (null x)
                                                       && all isAlphaNum x))
                             (choose (-1000,1000))
-    where
-      isSmall x = length x < 5
 
 -- | For sorting tableaus
 instance Ord LinVar where

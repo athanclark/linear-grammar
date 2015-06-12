@@ -15,6 +15,9 @@ spec = do
       property prop_multReduction_Idempotency
     it "`addLin` should not add or remove variables" $
       property prop_addMutation_NonForgetful
+  describe "LinVar" $
+    it "should generate non-empty variable names" $
+      property prop_linVar_notNull
   describe "LinExpr" $
     it "`removeDupLin` should be idempotent" $
       property prop_removeDup_Idempotency
@@ -34,6 +37,9 @@ prop_addMutation_NonForgetful x = length (exprVars $ addLin $ multLin x)
     astVars (ELit _) = []
     astVars (ECoeff e _) = astVars e
     astVars (EAdd e1 e2) = astVars e1 ++ astVars e2
+
+prop_linVar_notNull :: LinVar -> Bool
+prop_linVar_notNull x = not $ null $ varName x
 
 prop_removeDup_Idempotency :: LinExpr -> Bool
 prop_removeDup_Idempotency x = removeDupLin x == removeDupLin (removeDupLin x)
