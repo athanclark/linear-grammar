@@ -223,8 +223,8 @@ standardForm = go . standardize
   where
     go (Equ (LinExpr xs xc) (LinExpr ys yc)) | null xs && yc == 0 = EquStd ys xc
                                              | null ys && xc == 0 = EquStd xs yc
-    go (Lte (LinExpr xs xc) (LinExpr ys yc)) | null xs && yc == 0 = LteStd ys xc
-                                             | null ys && xc == 0 = GteStd xs yc
+    go (Lte (LinExpr xs xc) (LinExpr ys yc)) | null xs && yc == 0 = GteStd ys xc -- Ax >= M
+                                             | null ys && xc == 0 = LteStd xs yc -- Ax <= M
     go _ = error "Non-standard Ineq"
 
 -- | Standardizes user-level inequalities - to be used before @standardForm@.
