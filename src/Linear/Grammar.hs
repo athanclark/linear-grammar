@@ -10,6 +10,7 @@ import Data.Char
 import Data.List
 import Data.String
 import Control.Monad
+import Control.Applicative
 
 import Test.QuickCheck
 
