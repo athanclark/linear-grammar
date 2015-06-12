@@ -73,7 +73,7 @@ data LinVar = LinVar
 instance Arbitrary LinVar where
   arbitrary = liftM2 LinVar (arbitrary `suchThat` (\x -> length x < 5
                                                       && not (null x)
-                                                      && all isAlphaNum x))
+                                                      && all isAlpha x))
                             (choose (-1000,1000))
 
 -- | For sorting tableaus
@@ -99,9 +99,10 @@ data LinExpr = LinExpr
   } deriving (Show, Eq)
 
 instance Arbitrary LinExpr where
-  arbitrary = liftM2 LinExpr (arbitrary `suchThat` isUnique) $ choose (-1000,1000)
+  arbitrary = liftM2 LinExpr (arbitrary `suchThat` isUniquelyNamed) $ choose (-1000,1000)
     where
-      isUnique x = nub x == x
+      isUniquelyNamed x = let x' = map varName x in
+        nub x' == x'
 
 mergeLinExpr :: LinExpr -> LinExpr -> LinExpr
 mergeLinExpr (LinExpr vs1 x) (LinExpr vs2 y) = LinExpr (vs1 ++ vs2) (x + y)
@@ -167,12 +168,13 @@ data IneqStdForm =
 
 instance Arbitrary IneqStdForm where
   arbitrary = oneof
-    [ liftM2 EquStd (arbitrary `suchThat` isUnique) $ choose (-1000,1000)
-    , liftM2 LteStd (arbitrary `suchThat` isUnique) $ choose (-1000,1000)
-    , liftM2 GteStd (arbitrary `suchThat` isUnique) $ choose (-1000,1000)
+    [ liftM2 EquStd (arbitrary `suchThat` isUniquelyNamed) $ choose (-1000,1000)
+    , liftM2 LteStd (arbitrary `suchThat` isUniquelyNamed) $ choose (-1000,1000)
+    , liftM2 GteStd (arbitrary `suchThat` isUniquelyNamed) $ choose (-1000,1000)
     ]
     where
-      isUnique x = nub x == x
+      isUniquelyNamed x = let x' = map varName x in
+        nub x' == x'
 
 getStdVars :: IneqStdForm -> [LinVar]
 getStdVars (EquStd xs _) = xs
