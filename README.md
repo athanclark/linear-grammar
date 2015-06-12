@@ -1,21 +1,14 @@
-# linear-grammar
+linear-grammar
+==============
 
-TODO: Write description here
+[![Build Status](https://travis-ci.org/athanclark/linear-grammar.svg?branch=master)](https://travis-ci.org/athanclark/linear-grammar)
 
-## Installation
-
-TODO: Write installation instructions here
-
-## Usage
-
-TODO: Write usage instructions here
+A simple grammar specification for linear equations and inclusive inequalities.
+See the [hackage documentation](http://hackage.haskell.org/package/linear-grammar)
+for more info.
 
 ## How to run tests
 
 ```
-cabal configure --enable-tests && cabal build && cabal test
+cabal install --enable-tests && cabal test
 ```
-
-## Contributing
-
-TODO: Write contribution instructions here
