@@ -1,5 +1,5 @@
 Name:                   linear-grammar
-Version:                0.0.1.4
+Version:                0.0.1.5
 Author:                 Athan Clark <athan.clark@gmail.com>
 Maintainer:             Athan Clark <athan.clark@gmail.com>
 License:                BSD3
@@ -38,6 +38,7 @@ Library
   HS-Source-Dirs:       src
   GHC-Options:          -Wall
   Exposed-Modules:      Linear.Grammar
+                        Data.Number.Double.Extended
   Build-Depends:        base >= 4.6 && < 5
                       , QuickCheck
 
