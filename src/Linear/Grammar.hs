@@ -4,6 +4,7 @@
 
 module Linear.Grammar where
 
+import Data.Char
 import Data.List
 import Data.String
 import Control.Monad
@@ -70,7 +71,9 @@ data LinVar = LinVar
   } deriving (Show, Eq)
 
 instance Arbitrary LinVar where
-  arbitrary = liftM2 LinVar (arbitrary `suchThat` isSmall)
+  arbitrary = liftM2 LinVar (arbitrary `suchThat` (\x -> isSmall x
+                                                      && not (null x)
+                                                      && all isAlphaNum x))
                             (choose (-1000,1000))
     where
       isSmall x = length x < 5
