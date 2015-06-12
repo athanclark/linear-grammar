@@ -24,7 +24,7 @@ spec = do
       property prop_linExpr_uniquelyNamed
     it "`removeDupLin` should be idempotent" $
       property prop_removeDup_Idempotency
-  describe "IneqStdForm" $ do
+  describe "IneqStdForm" $
     it "should generate unique variable names" $
       property prop_ineqStdForm_uniquelyNamed
   describe "Ineq" $
