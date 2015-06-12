@@ -4,6 +4,8 @@
 
 module Linear.Grammar where
 
+import Data.Number.Double.Extended
+
 import Data.Char
 import Data.List
 import Data.String
@@ -70,6 +72,10 @@ data LinVar = LinVar
   , varCoeff :: Double
   } deriving (Show, Eq)
 
+-- | Boolean equality with @e^-6@ precision.
+eqLinVar :: LinVar -> LinVar -> Bool
+eqLinVar (LinVar n x) (LinVar m y) = n == m && eqDouble x y
+
 instance Arbitrary LinVar where
   arbitrary = liftM2 LinVar (arbitrary `suchThat` (\x -> length x < 5
                                                       && not (null x)
@@ -97,6 +103,11 @@ data LinExpr = LinExpr
   { exprVars :: [LinVar]
   , exprConst  :: Double
   } deriving (Show, Eq)
+
+-- | Boolean equality with @e^-6@ precision.
+eqLinExpr :: LinExpr -> LinExpr -> Bool
+eqLinExpr (LinExpr xs x) (LinExpr ys y) = eqDouble x y && length xs == length ys
+                                       && and (zipWith eqLinVar xs ys)
 
 instance Arbitrary LinExpr where
   arbitrary = liftM2 LinExpr (arbitrary `suchThat` isUniquelyNamed) $ choose (-1000,1000)
@@ -165,6 +176,16 @@ data IneqStdForm =
   | LteStd [LinVar] Double
   | GteStd [LinVar] Double
   deriving (Show, Eq)
+
+-- | Boolean equality with @e^-6@ precision.
+eqIneqStdForm :: IneqStdForm -> IneqStdForm -> Bool
+eqIneqStdForm (EquStd xs x) (EquStd ys y) = eqDouble x y && length xs == length ys
+                                         && and (zipWith eqLinVar xs ys)
+eqIneqStdForm (LteStd xs x) (LteStd ys y) = eqDouble x y && length xs == length ys
+                                         && and (zipWith eqLinVar xs ys)
+eqIneqStdForm (GteStd xs x) (GteStd ys y) = eqDouble x y && length xs == length ys
+                                         && and (zipWith eqLinVar xs ys)
+eqIneqStdForm _ _ = False
 
 instance Arbitrary IneqStdForm where
   arbitrary = oneof
