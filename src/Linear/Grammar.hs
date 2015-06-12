@@ -4,7 +4,7 @@
 
 module Linear.Grammar where
 
-import Data.List (find)
+import Data.List
 import Data.String
 import Control.Monad
 
@@ -70,7 +70,10 @@ data LinVar = LinVar
   } deriving (Show, Eq)
 
 instance Arbitrary LinVar where
-  arbitrary = liftM2 LinVar ((:[]) <$> choose ('A','z')) (choose (-1000,1000))
+  arbitrary = liftM2 LinVar (arbitrary `suchThat` isSmall)
+                            (choose (-1000,1000))
+    where
+      isSmall x = length x < 5
 
 -- | For sorting tableaus
 instance Ord LinVar where
@@ -95,7 +98,9 @@ data LinExpr = LinExpr
   } deriving (Show, Eq)
 
 instance Arbitrary LinExpr where
-  arbitrary = liftM2 LinExpr arbitrary $ choose (-1000,1000)
+  arbitrary = liftM2 LinExpr (arbitrary `suchThat` isUnique) $ choose (-1000,1000)
+    where
+      isUnique x = nub x == x
 
 mergeLinExpr :: LinExpr -> LinExpr -> LinExpr
 mergeLinExpr (LinExpr vs1 x) (LinExpr vs2 y) = LinExpr (vs1 ++ vs2) (x + y)
@@ -161,10 +166,12 @@ data IneqStdForm =
 
 instance Arbitrary IneqStdForm where
   arbitrary = oneof
-    [ liftM2 EquStd arbitrary $ choose (-1000,1000)
-    , liftM2 LteStd arbitrary $ choose (-1000,1000)
-    , liftM2 GteStd arbitrary $ choose (-1000,1000)
+    [ liftM2 EquStd (arbitrary `suchThat` isUnique) $ choose (-1000,1000)
+    , liftM2 LteStd (arbitrary `suchThat` isUnique) $ choose (-1000,1000)
+    , liftM2 GteStd (arbitrary `suchThat` isUnique) $ choose (-1000,1000)
     ]
+    where
+      isUnique x = nub x == x
 
 getStdVars :: IneqStdForm -> [LinVar]
 getStdVars (EquStd xs _) = xs
