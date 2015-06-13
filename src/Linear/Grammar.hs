@@ -6,8 +6,6 @@
 
 module Linear.Grammar where
 
-import Data.Number.Double.Extended
-
 import Data.Char
 import Data.List
 import Data.String
