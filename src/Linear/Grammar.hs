@@ -1,5 +1,7 @@
 {-# LANGUAGE
     MultiParamTypeClasses
+  , TypeSynonymInstances
+  , FlexibleInstances
   #-}
 
 module Linear.Grammar where
@@ -9,6 +11,8 @@ import Data.Number.Double.Extended
 import Data.Char
 import Data.List
 import Data.String
+import Data.Ratio
+import qualified Data.Set as Set
 import Control.Monad
 import Control.Applicative
 
@@ -20,16 +24,16 @@ import Test.QuickCheck
 -- | User-facing abstract syntax tree
 data LinAst =
     EVar String
-  | ELit Double
-  | ECoeff LinAst Double
+  | ELit Rational
+  | ECoeff LinAst Rational
   | EAdd LinAst LinAst
   deriving (Show, Eq)
 
 instance Arbitrary LinAst where
   arbitrary = oneof
     [ EVar <$> (:[]) <$> choose ('A','z')
-    , ELit <$> choose (-1000,1000)
-    , liftM2 ECoeff arbitrary $ choose (-1000,1000)
+    , ELit <$> between1000Rational
+    , liftM2 ECoeff arbitrary between1000Rational
     , liftM2 EAdd arbitrary arbitrary
     ]
 
@@ -47,10 +51,10 @@ class Coefficient x y where
 
 infixr 9 .*.
 
-instance Coefficient LinAst Double where
+instance Coefficient LinAst Rational where
   (.*.) = ECoeff
 
-instance Coefficient Double LinAst where
+instance Coefficient Rational LinAst where
   (.*.) = flip ECoeff
 
 -- | Pushes @ECoeff@ down the tree, leaving @EAdd@ at the top level.
@@ -70,21 +74,14 @@ multLin (EAdd e1 e2) = EAdd (multLin e1) (multLin e2)
 
 data LinVar = LinVar
   { varName  :: String
-  , varCoeff :: Double
+  , varCoeff :: Rational
   } deriving (Show, Eq)
-
--- | Boolean equality with @e^-6@ precision.
-eqLinVar :: LinVar -> LinVar -> Bool
-eqLinVar (LinVar n x) (LinVar m y) = n == m && eqDouble x y
-
-eqLinVars :: [LinVar] -> [LinVar] -> Bool
-eqLinVars xs ys = length xs == length ys && and (zipWith eqLinVar xs ys)
 
 instance Arbitrary LinVar where
   arbitrary = liftM2 LinVar (arbitrary `suchThat` (\x -> length x < 5
                                                       && not (null x)
                                                       && all isAlpha x))
-                            (choose (-1000,1000))
+                            between1000Rational
 
 -- | For sorting tableaus
 instance Ord LinVar where
@@ -96,27 +93,22 @@ hasName n (LinVar m _) = n == m
 mapName :: (String -> String) -> LinVar -> LinVar
 mapName f (LinVar n x) = LinVar (f n) x
 
-hasCoeff :: Double -> LinVar -> Bool
+hasCoeff :: Rational -> LinVar -> Bool
 hasCoeff x (LinVar _ y) = x == y
 
-mapCoeff :: (Double -> Double) -> LinVar -> LinVar
+mapCoeff :: (Rational -> Rational) -> LinVar -> LinVar
 mapCoeff f (LinVar n x) = LinVar n $ f x
 
 -- | Linear expressions suited for normal and standard form.
 data LinExpr = LinExpr
   { exprVars :: [LinVar]
-  , exprConst  :: Double
+  , exprConst  :: Rational
   } deriving (Show, Eq)
 
--- | Boolean equality with @e^-6@ precision.
-eqLinExpr :: LinExpr -> LinExpr -> Bool
-eqLinExpr (LinExpr xs x) (LinExpr ys y) = eqDouble x y && eqLinVars xs ys
-
 instance Arbitrary LinExpr where
-  arbitrary = liftM2 LinExpr (arbitrary `suchThat` isUniquelyNamed) $ choose (-1000,1000)
+  arbitrary = liftM2 LinExpr (arbitrary `suchThat` isUniquelyNamed) between1000Rational
     where
-      isUniquelyNamed x = let x' = map varName x in
-        nub x' == x'
+      isUniquelyNamed x = hasNoDups $ map varName x
 
 mergeLinExpr :: LinExpr -> LinExpr -> LinExpr
 mergeLinExpr (LinExpr vs1 x) (LinExpr vs2 y) = LinExpr (vs1 ++ vs2) (x + y)
@@ -175,27 +167,19 @@ infixl 7 .=>.
 -- * Standard Form
 
 data IneqStdForm =
-    EquStd [LinVar] Double
-  | LteStd [LinVar] Double
-  | GteStd [LinVar] Double
+    EquStd [LinVar] Rational
+  | LteStd [LinVar] Rational
+  | GteStd [LinVar] Rational
   deriving (Show, Eq)
-
--- | Boolean equality with @e^-6@ precision.
-eqIneqStdForm :: IneqStdForm -> IneqStdForm -> Bool
-eqIneqStdForm (EquStd xs x) (EquStd ys y) = eqDouble x y && eqLinVars xs ys
-eqIneqStdForm (LteStd xs x) (LteStd ys y) = eqDouble x y && eqLinVars xs ys
-eqIneqStdForm (GteStd xs x) (GteStd ys y) = eqDouble x y && eqLinVars xs ys
-eqIneqStdForm _ _ = False
 
 instance Arbitrary IneqStdForm where
   arbitrary = oneof
-    [ liftM2 EquStd (arbitrary `suchThat` isUniquelyNamed) $ choose (-1000,1000)
-    , liftM2 LteStd (arbitrary `suchThat` isUniquelyNamed) $ choose (-1000,1000)
-    , liftM2 GteStd (arbitrary `suchThat` isUniquelyNamed) $ choose (-1000,1000)
+    [ liftM2 EquStd (arbitrary `suchThat` isUniquelyNamed) between1000Rational
+    , liftM2 LteStd (arbitrary `suchThat` isUniquelyNamed) between1000Rational
+    , liftM2 GteStd (arbitrary `suchThat` isUniquelyNamed) between1000Rational
     ]
     where
-      isUniquelyNamed x = let x' = map varName x in
-        nub x' == x'
+      isUniquelyNamed x = hasNoDups $ map varName x
 
 getStdVars :: IneqStdForm -> [LinVar]
 getStdVars (EquStd xs _) = xs
@@ -207,12 +191,12 @@ mapStdVars f (EquStd xs xc) = EquStd (f xs) xc
 mapStdVars f (LteStd xs xc) = LteStd (f xs) xc
 mapStdVars f (GteStd xs xc) = GteStd (f xs) xc
 
-getStdConst :: IneqStdForm -> Double
+getStdConst :: IneqStdForm -> Rational
 getStdConst (EquStd _ x) = x
 getStdConst (LteStd _ x) = x
 getStdConst (GteStd _ x) = x
 
-mapStdConst :: (Double -> Double) -> IneqStdForm -> IneqStdForm
+mapStdConst :: (Rational -> Rational) -> IneqStdForm -> IneqStdForm
 mapStdConst f (EquStd xs xc) = EquStd xs (f xc)
 mapStdConst f (LteStd xs xc) = LteStd xs (f xc)
 mapStdConst f (GteStd xs xc) = GteStd xs (f xc)
@@ -245,3 +229,17 @@ standardize (Lte (LinExpr xs xc) (LinExpr ys yc))
         ys' = map (mapCoeff $ (*) (-1)) ys
       in
       Lte (removeDupLin $ LinExpr (ys' ++ xs) 0) (LinExpr [] (yc - xc))
+
+
+
+
+hasNoDups :: (Ord a) => [a] -> Bool
+hasNoDups = loop Set.empty
+  where
+    loop _ []       = True
+    loop s (x:xs) | s' <- Set.insert x s, Set.size s' > Set.size s
+                    = loop s' xs
+                  | otherwise
+                    = False
+
+between1000Rational = arbitrary `suchThat` (\x -> x <= 1000 && x >= -1000)
