@@ -9,7 +9,6 @@ module Linear.Grammar where
 import Data.Char
 import Data.List
 import Data.String
-import Data.Ratio
 import qualified Data.Set as Set
 import Control.Monad
 import Control.Applicative
@@ -240,4 +239,5 @@ hasNoDups = loop Set.empty
                   | otherwise
                     = False
 
+between1000Rational :: Gen Rational
 between1000Rational = arbitrary `suchThat` (\x -> x <= 1000 && x >= -1000)
